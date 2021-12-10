@@ -3,6 +3,9 @@
 namespace App\Http\Controllers\Item;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\Item as ResourcesItem;
+use App\Models\Item;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class ItemController extends Controller
@@ -15,6 +18,7 @@ class ItemController extends Controller
     public function index()
     {
         //
+        return Item::latest()->get();
     }
 
     /**
@@ -36,6 +40,13 @@ class ItemController extends Controller
     public function store(Request $request)
     {
         //
+        $item = new Item();
+
+        $item->name = $request->name;
+
+        $item->save();
+
+        return new ResourcesItem($item);
     }
 
     /**
@@ -70,6 +81,22 @@ class ItemController extends Controller
     public function update(Request $request, $id)
     {
         //
+        $item = Item::findOrFail($id);
+
+        if($item){
+            $item->name = $request->name;
+            $item->completed = $request->completed ? true : false;
+            $item->completed_at = $request->completed ? Carbon::now() : false;
+
+            $item->save();
+
+            return new ResourcesItem($item);
+        }
+
+        $response['status'] = false;
+        $response['error'] = 'No item was found!';
+        return response()->json($response);
+
     }
 
     /**
@@ -81,5 +108,17 @@ class ItemController extends Controller
     public function destroy($id)
     {
         //
+        $item = Item::findOrFail($id);
+
+        if($item){
+            if($item->delete()){
+                $response['status'] = true;
+                $response['message'] = 'Item successfully deleted';
+                return response()->json($response);
+            }
+        }
+        $response['status'] = false;
+        $response['error'] = 'No item was found!';
+        return response()->json($response);
     }
 }
